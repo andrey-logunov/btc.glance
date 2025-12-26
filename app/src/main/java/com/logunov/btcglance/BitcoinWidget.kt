@@ -14,8 +14,6 @@ import androidx.glance.layout.*
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.*
 
-// BitcoinWidget.kt
-
 class BitcoinWidget : GlanceAppWidget() {
 
     companion object {
@@ -33,7 +31,7 @@ class BitcoinWidget : GlanceAppWidget() {
 
     @Composable
     private fun Content() {
-        val price = currentState<String>(key = KEY_PRICE) ?: "Loading..."
+        val price = currentState<String>(key = KEY_PRICE) ?: "..."
         val lastUpdated = currentState<String>(key = KEY_LAST_UPDATED) ?: ""
 
         GlanceTheme {

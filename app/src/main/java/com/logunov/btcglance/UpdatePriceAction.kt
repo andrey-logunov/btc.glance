@@ -5,11 +5,6 @@ import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.state.updateAppWidgetState
-import com.logunov.btcglance.BitcoinWidget.Companion.KEY_LAST_UPDATED
-import com.logunov.btcglance.BitcoinWidget.Companion.KEY_PRICE
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,33 +15,26 @@ class UpdatePriceAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = CryptoApiClient.api.getBitcoinPrice()
-                val price = response.bitcoin["usd"]?.let { String.format("%,.2f", it) } ?: "N/A"
+        try {
+            val priceValue = CryptoApiClient.fetchBitcoinPrice()
+                ?: throw Exception("No price returned")
 
-                val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                val time = sdf.format(Date())
+            val price = String.format("$%,.2f", priceValue)
 
-                updateAppWidgetState(context, glanceId) { prefs ->
-                    prefs.toMutablePreferences()
-                        .apply {
-                            this[KEY_PRICE] = "$$price"
-                            this[KEY_LAST_UPDATED] = time
-                        }
-                }
+            val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            val time = sdf.format(Date())
 
-                BitcoinWidget().update(context, glanceId)
-            } catch (e: Exception) {
-                // Handle error (e.g., show "Error")
-                updateAppWidgetState(context, glanceId) { prefs ->
-                    prefs.toMutablePreferences()
-                        .apply {
-                            this[KEY_PRICE] = "Error"
-                        }
-                }
-                BitcoinWidget().update(context, glanceId)
+            updateAppWidgetState(context, glanceId) { prefs ->
+                prefs[BitcoinWidget.KEY_PRICE] = price
+                prefs[BitcoinWidget.KEY_LAST_UPDATED] = time
             }
+
+            BitcoinWidget().update(context, glanceId)
+        } catch (e: Exception) {
+            updateAppWidgetState(context, glanceId) { prefs ->
+                prefs[BitcoinWidget.KEY_PRICE] = "Error: ${e.message}"
+            }
+            BitcoinWidget().update(context, glanceId)
         }
     }
 }
